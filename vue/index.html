@@ -13,19 +13,14 @@ initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <title>Лучшие заметки</title>
 </head>
 <body>
-<!--    <div class="stats">-->
-<!--        <div class="stat">-->
-<!--            <span> Просроченных карточек: <strong>{{ overdueCount }}</strong></span><br>-->
-<!--            <span> Выполнено / Всего задач: <strong>{{ totalStats.completed }} / {{ totalStats.total }}</strong></span></div></div>-->
-<!--    <add-card-form @add-card="addCard" :form-disabled="!canAddNewCard"></add-card-form>-->
     <div class="columns">
         <div id="app">
             <h3>Notes</h3>
             <div class="columns">
-                <first-column :cards="firstColumnCards" @add-card="addCard" @remove-card="removeCard"></first-column>
-                <second-column :cards="secondColumnCards" @remove-card="removeCard"></second-column>
-                <third-column :cards="thirdColumnCards"  @remove-card="removeCard"></third-column>
-                <fourth-column :cards="fourthColumnCards"  @remove-card="removeCard"></fourth-column>
+                <first-column :cards="firstColumnCards" @add-card="addCard" @remove-card="removeCard"  @update-card="updateCard"></first-column>
+                <second-column :cards="secondColumnCards" @remove-card="removeCard"  @update-card="updateCard"></second-column>
+                <third-column :cards="thirdColumnCards"  @remove-card="removeCard"  @update-card="updateCard" ></third-column>
+                <fourth-column :cards="fourthColumnCards"  @remove-card="removeCard"  @update-card="updateCard"></fourth-column>
             </div>
         </div>
 

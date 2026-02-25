@@ -2,13 +2,69 @@ Vue.component('card-item', {
     props: {
         card: { type: Object, required: true }
     },
+    data() {
+        return {
+            isEditing: false,
+            editedName: this.card.name,
+            editedDescription: this.card.description || '',
+            editedDeadline: this.card.deadline || ''
+        };
+    },
+    methods: {
+        saveChanges() {
+            this.$emit('update-card', {
+                id: this.card.id,
+                name: this.editedName.trim(),
+                description: this.editedDescription.trim(),
+                deadline: this.editedDeadline
+            });
+            this.isEditing = false;
+        },
+        cancelEditing() {
+            this.editedName = this.card.name;
+            this.editedDescription = this.card.description || '';
+            this.editedDeadline = this.card.deadline || '';
+            this.isEditing = false;
+        }
+    },
+    watch: {
+        // Синхронизация локальных полей, если карточка изменилась извне (например, при обновлении в другой колонке)
+        card: {
+            handler(newCard) {
+                this.editedName = newCard.name;
+                this.editedDescription = newCard.description || '';
+                this.editedDeadline = newCard.deadline || '';
+            },
+            deep: true
+        }
+    },
     template: `
         <div class="card">
+        <div v-if="!isEditing">
             <h3>{{ card.name }}</h3>
             <p v-if="card.description">Описание: {{ card.description }}</p>
-            <p v-if="card.deadline">Дедлайн: {{ card.deadline }}</p>
+            <p v-if="card.deadline">Дедлайн: {{ new Date(card.deadline).toLocaleString() }}</p>
             <p v-if="card.createdAt">Создано: {{ new Date(card.createdAt).toLocaleString() }}</p>
             <button @click="$emit('remove-card', card.id)">Удалить</button>
+             <button @click="isEditing = true">Редактировать</button>
+        </div>
+        <div v-else>
+        <h3>Редактирование</h3>
+                <p>
+                    <label>Название:</label>
+                    <input v-model="editedName" placeholder="Название">
+                </p>
+                <p>
+                    <label>Описание:</label>
+                    <textarea v-model="editedDescription" placeholder="Описание"></textarea>
+                </p>
+                <p>
+                    <label>Дедлайн:</label>
+                    <input type="datetime-local" v-model="editedDeadline">
+                </p>
+                <button @click="saveChanges">Сохранить</button>
+                <button @click="cancelEditing">Отмена</button>
+            </div>
         </div>
     `
 });
@@ -45,10 +101,10 @@ Vue.component('first-column', {
                                 <label for="deadline">Deadline:</label>
                                 <input type="datetime-local" id="deadline" v-model="deadline">
                             </p>
-                            <p>
-                                <label for="createdAt">Created task:</label>
-                                <input type="datetime-local" id="createdAt" v-model="createdAt">
-                            </p>
+<!--                            <p>-->
+<!--                                <label for="createdAt">Created task:</label>-->
+<!--                                <input type="datetime-local" id="createdAt" v-model="createdAt">-->
+<!--                            </p>-->
                             <p>
                                 <input type="submit" value="Add card">
                             </p>
@@ -57,15 +113,16 @@ Vue.component('first-column', {
                 </form>
                 <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
-                    <card-item 
-                        v-for="card in cards" 
-                        :key="card.id" 
+                    <card-item
+                        v-for="card in cards"
+                        :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
+                         @update-card="$emit('update-card', $event)"
                     ></card-item>
                 </div>
             </div>
-            <button @click="removeToCart">Remove to cart</button>
+<!--            <button @click="removeToCart">Remove to cart</button>-->
         </div>
     `,
     data() {
@@ -74,7 +131,8 @@ Vue.component('first-column', {
             errors: [],
             description: '',
             deadline: '',
-            createdAt: ''
+            createdAt: '',
+            lastEdited: null,
         };
     },
     methods: {
@@ -101,8 +159,17 @@ Vue.component('first-column', {
                 const lastCard = this.cards[this.cards.length - 1];
                 this.$emit('remove-card', lastCard.id);
             }
+        },
+            updateTimestamp() {
+                this.lastEdited = new Date();
+            }
+    },
+    computed: {
+        formattedLastEdited() {
+            if (!this.lastEdited) return '';
+            return this.lastEdited.toLocaleString(); // локальный формат даты и времени
         }
-    }
+    },
 });
 
 // Вторая колонка (Задачи в работе)
@@ -117,11 +184,12 @@ Vue.component('second-column', {
             <div>
                 <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
-                    <card-item 
-                        v-for="card in cards" 
-                        :key="card.id" 
+                    <card-item
+                        v-for="card in cards"
+                        :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
+                         @update-card="$emit('update-card', $event)"
                     ></card-item>
                 </div>
             </div>
@@ -141,11 +209,12 @@ Vue.component('third-column', {
             <div>
                 <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
-                    <card-item 
-                        v-for="card in cards" 
-                        :key="card.id" 
+                    <card-item
+                        v-for="card in cards"
+                        :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
+                         @update-card="$emit('update-card', $event)"
                     ></card-item>
                 </div>
             </div>
@@ -164,11 +233,12 @@ Vue.component('fourth-column', {
             <div>
                 <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
-                    <card-item 
-                        v-for="card in cards" 
-                        :key="card.id" 
+                    <card-item
+                        v-for="card in cards"
+                        :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
+                         @update-card="$emit('update-card', $event)"
                     ></card-item>
                 </div>
             </div>
@@ -193,7 +263,8 @@ new Vue({
                 name: cardData.name,
                 description: cardData.description || '',
                 deadline: cardData.deadline || '',
-                createdAt: cardData.createdAt || new Date().toISOString()
+                createdAt: cardData.createdAt || new Date().toISOString(),
+                lastEdited: null
             };
             this.firstColumnCards.push(newCard);
         },
@@ -202,6 +273,27 @@ new Vue({
             this.secondColumnCards = this.secondColumnCards.filter(card => card.id !== cardId);
             this.thirdColumnCards = this.thirdColumnCards.filter(card => card.id !== cardId);
             this.fourthColumnCards = this.fourthColumnCards.filter(card => card.id !== cardId);
+        },
+        updateCard(updatedData) {
+            const allColumns = [
+                this.firstColumnCards,
+                this.secondColumnCards,
+                this.thirdColumnCards,
+                this.fourthColumnCards
+            ];
+
+            for (let column of allColumns) {
+                const card = column.find(c => c.id === updatedData.id);
+                if (card) {
+                    card.name = updatedData.name;
+                    card.description = updatedData.description;
+                    card.deadline = updatedData.deadline;
+                    card.lastEdited = new Date().toISOString();
+                    break;
+                }
+            }
         }
-    }
+    },
+
 });
+
