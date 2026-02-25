@@ -36,11 +36,6 @@ input[type="submit" i]  {
     font-size: 17px;
 }
 
-.column-item {
-    display: flex;
-    gap:15px;
-
-}
 body {
     padding: 30px;
 }
@@ -87,4 +82,16 @@ h3 {
     font-size: 25px;
     text-align: center;
     padding: 15px;
+}
+.columns {
+    display: flex;
+}
+.urgent {
+    animation: blink 1s infinite;
+    background-color: #ffeeee;
+}
+@keyframes blink {
+    0% { background-color: #ffeeee; }
+    50% { background-color: #ffcccc; }
+    100% { background-color: #ffeeee; }
 }
