@@ -18,9 +18,9 @@ initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
             <h3>Notes</h3>
             <div class="columns">
                 <first-column :cards="firstColumnCards" @add-card="addCard" @remove-card="removeCard"  @update-card="updateCard"   @move-to-work="moveToWork" ></first-column>
-                <second-column :cards="secondColumnCards" @remove-card="removeCard"  @update-card="updateCard"></second-column>
-                <third-column :cards="thirdColumnCards"  @remove-card="removeCard"  @update-card="updateCard" ></third-column>
-                <fourth-column :cards="fourthColumnCards"  @remove-card="removeCard"  @update-card="updateCard"></fourth-column>
+                <second-column :cards="secondColumnCards"  @remove-card="removeCard" @update-card="updateCard" @move-to-test="moveToTest"></second-column>
+                <third-column :cards="thirdColumnCards"   @remove-card="removeCard" @update-card="updateCard" @move-to-end="moveToEnd" @return-to-work="returnToWork"></third-column>
+                <fourth-column :cards="fourthColumnCards"   @remove-card="removeCard" ></fourth-column>
             </div>
         </div>
 

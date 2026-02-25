@@ -1,18 +1,40 @@
-
 Vue.component('card-item', {
     props: {
         card: { type: Object, required: true },
-        showMoveToWork: { type: Boolean, default: false } // только для первой колонки
+        showMoveToWork: { type: Boolean, default: false },
+        showMoveToTest: { type: Boolean, default: false },
+        showMoveToEnd: { type: Boolean, default: false },
+        showReturnToWork: { type: Boolean, default: false },
     },
     data() {
         return {
             isEditing: false,
             editedName: this.card.name,
             editedDescription: this.card.description || '',
-            editedDeadline: this.card.deadline || ''
+            editedDeadline: this.card.deadline || '',
+            showReturnInput: false,
+            returnReasonInput: ''
         };
     },
     methods: {
+        openReturnInput() {
+            this.showReturnInput = true;
+            this.returnReasonInput = '';
+        },
+        confirmReturn() {
+            if (this.returnReasonInput.trim()) {
+                this.$emit('return-to-work', {
+                    id: this.card.id,
+                    reason: this.returnReasonInput.trim()
+                });
+                this.showReturnInput = false;
+                this.returnReasonInput = '';
+            }
+        },
+        cancelReturn() {
+            this.showReturnInput = false;
+            this.returnReasonInput = '';
+        },
         saveChanges() {
             this.$emit('update-card', {
                 id: this.card.id,
@@ -47,9 +69,21 @@ Vue.component('card-item', {
                 <p v-if="card.deadline">Дедлайн: {{ new Date(card.deadline).toLocaleString() }}</p>
                 <p v-if="card.createdAt">Создано: {{ new Date(card.createdAt).toLocaleString() }}</p>
                 <p v-if="card.lastEdited">Отредактировано: {{ new Date(card.lastEdited).toLocaleString() }}</p>
+                <p v-if="card.returnReason" style="color: red;">Причина возврата: {{ card.returnReason }}</p>
                 <button @click="$emit('remove-card', card.id)">Удалить</button>
                 <button @click="isEditing = true">Редактировать</button>
                 <button v-if="showMoveToWork" @click="$emit('move-to-work', card.id)">В работу</button>
+                <button v-if="showMoveToTest" @click="$emit('move-to-test', card.id)">В тестирование</button>
+                <button v-if="showMoveToEnd" @click="$emit('move-to-end', card.id)">Задача выполнена</button>
+                <button v-if="showReturnToWork && !showReturnInput" @click="openReturnInput">Вернуть в работу</button>
+                <div v-if="showReturnInput">
+                    <p>
+                        <label>Причина возврата:</label>
+                        <input v-model="returnReasonInput" placeholder="Укажите причину">
+                    </p>
+                    <button @click="confirmReturn">Подтвердить</button>
+                    <button @click="cancelReturn">Отмена</button>
+                </div>
             </div>
             <div v-else>
                 <h3>Редактирование</h3>
@@ -68,6 +102,7 @@ Vue.component('card-item', {
                 <button @click="saveChanges">Сохранить</button>
                 <button @click="cancelEditing">Отмена</button>
             </div>
+            <p v-if="card.completedStatus">Статус: {{ card.completedStatus }}</p>
         </div>
     `
 });
@@ -106,15 +141,23 @@ Vue.component('first-column', {
                             <p>
                                 <input type="submit" value="Add card">
                             </p>
+                            <p>
+    <label>Приоритет (1-3):</label>
+    <select v-model.number="priority">
+        <option value="1">1 (низкий)</option>
+        <option value="2">2 (средний)</option>
+        <option value="3">3 (высокий)</option>
+    </select>
+</p>
                         </div>
                     </div>
                 </form>
-                <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
                     <card-item
                         v-for="card in cards"
                         :key="card.id"
                         :card="card"
+                        :remove-card="true"
                         :show-move-to-work="true"
                         @remove-card="$emit('remove-card', $event)"
                         @update-card="$emit('update-card', $event)"
@@ -129,7 +172,8 @@ Vue.component('first-column', {
             name: '',
             errors: [],
             description: '',
-            deadline: ''
+            deadline: '',
+            priority: 1,
         };
     },
     methods: {
@@ -162,12 +206,13 @@ Vue.component('second-column', {
         <div>
             <h2>Задачи в работе</h2>
             <div>
-                <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
                     <card-item
                         v-for="card in cards"
                         :key="card.id"
                         :card="card"
+                        :show-move-to-test="true"
+                        @move-to-test="$emit('move-to-test', $event)"
                         @remove-card="$emit('remove-card', $event)"
                         @update-card="$emit('update-card', $event)"
                     ></card-item>
@@ -186,12 +231,16 @@ Vue.component('third-column', {
         <div>
             <h2>Тестирование</h2>
             <div>
-                <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
                     <card-item
                         v-for="card in cards"
                         :key="card.id"
                         :card="card"
+                        :show-move-to-end="true"
+                 
+                        :show-return-to-work="true" 
+                        @return-to-work="$emit('return-to-work', $event)"
+                        @move-to-end="$emit('move-to-end', $event)"
                         @remove-card="$emit('remove-card', $event)"
                         @update-card="$emit('update-card', $event)"
                     ></card-item>
@@ -209,14 +258,13 @@ Vue.component('fourth-column', {
         <div>
             <h2>Выполненные задачи</h2>
             <div>
-                <p v-if="!cards.length">There are no cards yet.</p>
                 <div class="column-item">
                     <card-item
                         v-for="card in cards"
                         :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
-                        @update-card="$emit('update-card', $event)"
+                     
                     ></card-item>
                 </div>
             </div>
@@ -250,7 +298,6 @@ new Vue({
                 this.firstColumnCards,
                 this.secondColumnCards,
                 this.thirdColumnCards,
-                this.fourthColumnCards
             ];
             for (let column of allColumns) {
                 const card = column.find(c => c.id === updatedData.id);
@@ -270,11 +317,41 @@ new Vue({
             this.fourthColumnCards = this.fourthColumnCards.filter(card => card.id !== cardId);
         },
         moveToWork(cardId) {
-            const card = this.firstColumnCards.find(c => c.id === cardId);
+            let card = this.firstColumnCards.find(card => card.id === cardId);
             if (card) {
-                this.firstColumnCards = this.firstColumnCards.filter(c => c.id !== cardId);
+                this.firstColumnCards = this.firstColumnCards.filter(card => card.id !== cardId);
                 this.secondColumnCards.push(card);
             }
-        }
+        },
+        moveToTest(cardId) {
+            let card = this.secondColumnCards.find(card => card.id===cardId);
+            if (card) {
+                this.secondColumnCards=this.secondColumnCards.filter(card=>card.id !==cardId);
+                this.thirdColumnCards.push(card)
+            }
+        },
+        moveToEnd(cardId) {
+            let card = this.thirdColumnCards.find(card => card.id === cardId);
+            if (card) {
+                const now = new Date();
+                const deadline = card.deadline ? new Date(card.deadline) : null;
+                if (deadline && deadline < now) {
+                    card.completedStatus = 'Просрочено';
+                } else {
+                    card.completedStatus = 'Выполнено в срок';
+                }
+                delete card.returnReason;
+                this.thirdColumnCards = this.thirdColumnCards.filter(c => c.id !== cardId);
+                this.fourthColumnCards.push(card);
+            }
+        },
+        returnToWork(payload) {
+            let card = this.thirdColumnCards.find(card => card.id === payload.id);
+            if (card) {
+                card.returnReason = payload.reason;
+                this.thirdColumnCards = this.thirdColumnCards.filter(card => card.id !== payload.id);
+                this.secondColumnCards.push(card);
+            }
+        },
     }
 });
