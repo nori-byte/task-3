@@ -5,6 +5,8 @@ Vue.component('card-item', {
         showMoveToTest: { type: Boolean, default: false },
         showMoveToEnd: { type: Boolean, default: false },
         showReturnToWork: { type: Boolean, default: false },
+        isUrgent: { type: Boolean, default: false },
+        blocked: { type: Boolean, default: false }
     },
     data() {
         return {
@@ -62,20 +64,21 @@ Vue.component('card-item', {
         }
     },
     template: `
-        <div class="card">
+        <div class="card" :class="{ urgent: isUrgent }">
             <div v-if="!isEditing">
                 <h3>{{ card.name }}</h3>
+                <p>Приоритет: {{ card.priority || 1 }}</p>
                 <p v-if="card.description">Описание: {{ card.description }}</p>
                 <p v-if="card.deadline">Дедлайн: {{ new Date(card.deadline).toLocaleString() }}</p>
                 <p v-if="card.createdAt">Создано: {{ new Date(card.createdAt).toLocaleString() }}</p>
                 <p v-if="card.lastEdited">Отредактировано: {{ new Date(card.lastEdited).toLocaleString() }}</p>
-                <p v-if="card.returnReason" style="color: red;">Причина возврата: {{ card.returnReason }}</p>
-                <button @click="$emit('remove-card', card.id)">Удалить</button>
-                <button @click="isEditing = true">Редактировать</button>
-                <button v-if="showMoveToWork" @click="$emit('move-to-work', card.id)">В работу</button>
-                <button v-if="showMoveToTest" @click="$emit('move-to-test', card.id)">В тестирование</button>
-                <button v-if="showMoveToEnd" @click="$emit('move-to-end', card.id)">Задача выполнена</button>
-                <button v-if="showReturnToWork && !showReturnInput" @click="openReturnInput">Вернуть в работу</button>
+                <p v-if="card.returnReason" style="color: red;" :disabled="blocked">Причина возврата: {{ card.returnReason }}</p>
+                <button @click="$emit('remove-card', card.id)" :disabled="blocked">Удалить</button>
+                <button @click="isEditing = true" :disabled="blocked">Редактировать</button>
+                <button v-if="showMoveToWork" @click="$emit('move-to-work', card.id)" :disabled="blocked">В работу</button>
+                <button v-if="showMoveToTest" @click="$emit('move-to-test', card.id)"  :disabled="blocked">В тестирование</button>
+                <button v-if="showMoveToEnd" @click="$emit('move-to-end', card.id)" :disabled="blocked">Задача выполнена</button>
+                <button v-if="showReturnToWork && !showReturnInput" @click="openReturnInput" :disabled="blocked">Вернуть в работу</button>
                 <div v-if="showReturnInput">
                     <p>
                         <label>Причина возврата:</label>
@@ -113,6 +116,26 @@ Vue.component('first-column', {
         max: Number,
         formDisabled: { type: Boolean, default: false }
     },
+    computed: {
+        sortedCards() {
+            return this.cards.slice().sort((a, b) => (a.priority || 1) - (b.priority || 1));
+        },
+        urgentCardIds() {
+            const now = new Date();
+            return this.cards
+                .filter(card => {
+                    if (!card.deadline) return false;
+                    const deadline = new Date(card.deadline);
+                    // Если deadline валидная дата и разница < 24 часа
+                    return !isNaN(deadline) && (deadline - now) < 24 * 60 * 60 * 1000;
+                })
+                .map(c => c.id);
+        },
+        // Есть ли хотя бы одна критическая карточка в колонке
+        hasUrgent() {
+            return this.urgentCardIds.length > 0;
+        }
+    },
     template: `
         <div>
             <h2>Запланированные задачи</h2>
@@ -144,9 +167,9 @@ Vue.component('first-column', {
                             <p>
     <label>Приоритет (1-3):</label>
     <select v-model.number="priority">
-        <option value="1">1 (низкий)</option>
+        <option value="1">1 (высокий)</option>
         <option value="2">2 (средний)</option>
-        <option value="3">3 (высокий)</option>
+        <option value="3">3 (низкий)</option>
     </select>
 </p>
                         </div>
@@ -154,11 +177,13 @@ Vue.component('first-column', {
                 </form>
                 <div class="column-item">
                     <card-item
-                        v-for="card in cards"
+                        v-for="card in sortedCards"
                         :key="card.id"
                         :card="card"
                         :remove-card="true"
                         :show-move-to-work="true"
+                        :is-urgent="urgentCardIds.includes(card.id)"
+    :blocked="hasUrgent && !urgentCardIds.includes(card.id)"
                         @remove-card="$emit('remove-card', $event)"
                         @update-card="$emit('update-card', $event)"
                         @move-to-work="$emit('move-to-work', $event)"
@@ -188,7 +213,8 @@ Vue.component('first-column', {
                 name: this.name.trim(),
                 description: this.description.trim(),
                 deadline: this.deadline,
-                createdAt: new Date().toISOString()
+                createdAt: new Date().toISOString(),
+                priority: this.priority,
             });
             this.name = '';
             this.description = '';
@@ -202,13 +228,18 @@ Vue.component('second-column', {
         cards: Array,
         max: Number
     },
+    computed: {
+        sortedCards() {
+            return this.cards.slice().sort((a, b) => (a.priority || 1) - (b.priority || 1));
+        }
+    },
     template: `
         <div>
             <h2>Задачи в работе</h2>
             <div>
                 <div class="column-item">
                     <card-item
-                        v-for="card in cards"
+                        v-for="card in sortedCards"
                         :key="card.id"
                         :card="card"
                         :show-move-to-test="true"
@@ -227,13 +258,18 @@ Vue.component('third-column', {
         cards: Array,
         max: Number
     },
+    computed: {
+        sortedCards() {
+            return this.cards.slice().sort((a, b) => (a.priority || 1) - (b.priority || 1));
+        }
+    },
     template: `
         <div>
             <h2>Тестирование</h2>
             <div>
                 <div class="column-item">
                     <card-item
-                        v-for="card in cards"
+                        v-for="card in sortedCards"
                         :key="card.id"
                         :card="card"
                         :show-move-to-end="true"
@@ -254,13 +290,18 @@ Vue.component('fourth-column', {
     props: {
         cards: Array
     },
+    computed: {
+        sortedCards() {
+            return this.cards.slice().sort((a, b) => (b.priority || 1) - (a.priority || 1));
+        }
+    },
     template: `
         <div>
             <h2>Выполненные задачи</h2>
             <div>
                 <div class="column-item">
                     <card-item
-                        v-for="card in cards"
+                        v-for="card in sortedCards"
                         :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
@@ -289,7 +330,8 @@ new Vue({
                 description: cardData.description || '',
                 deadline: cardData.deadline || '',
                 createdAt: cardData.createdAt || new Date().toISOString(),
-                lastEdited: null
+                lastEdited: null,
+                priority: cardData.priority || 1,
             };
             this.firstColumnCards.push(newCard);
         },
