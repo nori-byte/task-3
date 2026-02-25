@@ -1,6 +1,8 @@
+
 Vue.component('card-item', {
     props: {
-        card: { type: Object, required: true }
+        card: { type: Object, required: true },
+        showMoveToWork: { type: Boolean, default: false } // только для первой колонки
     },
     data() {
         return {
@@ -28,7 +30,6 @@ Vue.component('card-item', {
         }
     },
     watch: {
-        // Синхронизация локальных полей, если карточка изменилась извне (например, при обновлении в другой колонке)
         card: {
             handler(newCard) {
                 this.editedName = newCard.name;
@@ -40,16 +41,18 @@ Vue.component('card-item', {
     },
     template: `
         <div class="card">
-        <div v-if="!isEditing">
-            <h3>{{ card.name }}</h3>
-            <p v-if="card.description">Описание: {{ card.description }}</p>
-            <p v-if="card.deadline">Дедлайн: {{ new Date(card.deadline).toLocaleString() }}</p>
-            <p v-if="card.createdAt">Создано: {{ new Date(card.createdAt).toLocaleString() }}</p>
-            <button @click="$emit('remove-card', card.id)">Удалить</button>
-             <button @click="isEditing = true">Редактировать</button>
-        </div>
-        <div v-else>
-        <h3>Редактирование</h3>
+            <div v-if="!isEditing">
+                <h3>{{ card.name }}</h3>
+                <p v-if="card.description">Описание: {{ card.description }}</p>
+                <p v-if="card.deadline">Дедлайн: {{ new Date(card.deadline).toLocaleString() }}</p>
+                <p v-if="card.createdAt">Создано: {{ new Date(card.createdAt).toLocaleString() }}</p>
+                <p v-if="card.lastEdited">Отредактировано: {{ new Date(card.lastEdited).toLocaleString() }}</p>
+                <button @click="$emit('remove-card', card.id)">Удалить</button>
+                <button @click="isEditing = true">Редактировать</button>
+                <button v-if="showMoveToWork" @click="$emit('move-to-work', card.id)">В работу</button>
+            </div>
+            <div v-else>
+                <h3>Редактирование</h3>
                 <p>
                     <label>Название:</label>
                     <input v-model="editedName" placeholder="Название">
@@ -69,7 +72,6 @@ Vue.component('card-item', {
     `
 });
 
-// Первая колонка (Запланированные задачи)
 Vue.component('first-column', {
     props: {
         cards: Array,
@@ -101,10 +103,6 @@ Vue.component('first-column', {
                                 <label for="deadline">Deadline:</label>
                                 <input type="datetime-local" id="deadline" v-model="deadline">
                             </p>
-<!--                            <p>-->
-<!--                                <label for="createdAt">Created task:</label>-->
-<!--                                <input type="datetime-local" id="createdAt" v-model="createdAt">-->
-<!--                            </p>-->
                             <p>
                                 <input type="submit" value="Add card">
                             </p>
@@ -117,12 +115,13 @@ Vue.component('first-column', {
                         v-for="card in cards"
                         :key="card.id"
                         :card="card"
+                        :show-move-to-work="true"
                         @remove-card="$emit('remove-card', $event)"
-                         @update-card="$emit('update-card', $event)"
+                        @update-card="$emit('update-card', $event)"
+                        @move-to-work="$emit('move-to-work', $event)"
                     ></card-item>
                 </div>
             </div>
-<!--            <button @click="removeToCart">Remove to cart</button>-->
         </div>
     `,
     data() {
@@ -130,9 +129,7 @@ Vue.component('first-column', {
             name: '',
             errors: [],
             description: '',
-            deadline: '',
-            createdAt: '',
-            lastEdited: null,
+            deadline: ''
         };
     },
     methods: {
@@ -152,27 +149,10 @@ Vue.component('first-column', {
             this.name = '';
             this.description = '';
             this.deadline = '';
-            this.createdAt = '';
-        },
-        removeToCart() {
-            if (this.cards.length > 0) {
-                const lastCard = this.cards[this.cards.length - 1];
-                this.$emit('remove-card', lastCard.id);
-            }
-        },
-            updateTimestamp() {
-                this.lastEdited = new Date();
-            }
-    },
-    computed: {
-        formattedLastEdited() {
-            if (!this.lastEdited) return '';
-            return this.lastEdited.toLocaleString(); // локальный формат даты и времени
         }
-    },
+    }
 });
 
-// Вторая колонка (Задачи в работе)
 Vue.component('second-column', {
     props: {
         cards: Array,
@@ -189,7 +169,7 @@ Vue.component('second-column', {
                         :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
-                         @update-card="$emit('update-card', $event)"
+                        @update-card="$emit('update-card', $event)"
                     ></card-item>
                 </div>
             </div>
@@ -197,7 +177,6 @@ Vue.component('second-column', {
     `
 });
 
-// Третья колонка (Тестирование)
 Vue.component('third-column', {
     props: {
         cards: Array,
@@ -214,7 +193,7 @@ Vue.component('third-column', {
                         :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
-                         @update-card="$emit('update-card', $event)"
+                        @update-card="$emit('update-card', $event)"
                     ></card-item>
                 </div>
             </div>
@@ -222,7 +201,6 @@ Vue.component('third-column', {
     `
 });
 
-// Четвёртая колонка (Выполненные задачи)
 Vue.component('fourth-column', {
     props: {
         cards: Array
@@ -238,7 +216,7 @@ Vue.component('fourth-column', {
                         :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
-                         @update-card="$emit('update-card', $event)"
+                        @update-card="$emit('update-card', $event)"
                     ></card-item>
                 </div>
             </div>
@@ -246,7 +224,6 @@ Vue.component('fourth-column', {
     `
 });
 
-// Корневой экземпляр Vue
 new Vue({
     el: '#app',
     data: {
@@ -268,12 +245,6 @@ new Vue({
             };
             this.firstColumnCards.push(newCard);
         },
-        removeCard(cardId) {
-            this.firstColumnCards = this.firstColumnCards.filter(card => card.id !== cardId);
-            this.secondColumnCards = this.secondColumnCards.filter(card => card.id !== cardId);
-            this.thirdColumnCards = this.thirdColumnCards.filter(card => card.id !== cardId);
-            this.fourthColumnCards = this.fourthColumnCards.filter(card => card.id !== cardId);
-        },
         updateCard(updatedData) {
             const allColumns = [
                 this.firstColumnCards,
@@ -281,7 +252,6 @@ new Vue({
                 this.thirdColumnCards,
                 this.fourthColumnCards
             ];
-
             for (let column of allColumns) {
                 const card = column.find(c => c.id === updatedData.id);
                 if (card) {
@@ -292,8 +262,19 @@ new Vue({
                     break;
                 }
             }
+        },
+        removeCard(cardId) {
+            this.firstColumnCards = this.firstColumnCards.filter(card => card.id !== cardId);
+            this.secondColumnCards = this.secondColumnCards.filter(card => card.id !== cardId);
+            this.thirdColumnCards = this.thirdColumnCards.filter(card => card.id !== cardId);
+            this.fourthColumnCards = this.fourthColumnCards.filter(card => card.id !== cardId);
+        },
+        moveToWork(cardId) {
+            const card = this.firstColumnCards.find(c => c.id === cardId);
+            if (card) {
+                this.firstColumnCards = this.firstColumnCards.filter(c => c.id !== cardId);
+                this.secondColumnCards.push(card);
+            }
         }
-    },
-
+    }
 });
-
