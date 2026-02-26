@@ -126,12 +126,11 @@ Vue.component('first-column', {
                 .filter(card => {
                     if (!card.deadline) return false;
                     const deadline = new Date(card.deadline);
-                    // Если deadline валидная дата и разница < 24 часа
-                    return !isNaN(deadline) && (deadline - now) < 24 * 60 * 60 * 1000;
+                    const diff = deadline - now;
+                    return !isNaN(deadline) && diff > 0 && diff < 24 * 60 * 60 * 1000;
                 })
                 .map(c => c.id);
         },
-        // Есть ли хотя бы одна критическая карточка в колонке
         hasUrgent() {
             return this.urgentCardIds.length > 0;
         }
@@ -231,6 +230,20 @@ Vue.component('second-column', {
     computed: {
         sortedCards() {
             return this.cards.slice().sort((a, b) => (a.priority || 1) - (b.priority || 1));
+        },
+        urgentCardIds() {
+            const now = new Date();
+            return this.cards
+                .filter(card => {
+                    if (!card.deadline) return false;
+                    const deadline = new Date(card.deadline);
+                    const diff = deadline - now;
+                    return !isNaN(deadline) && diff > 0 && diff < 24 * 60 * 60 * 1000;
+                })
+                .map(c => c.id);
+        },
+        hasUrgent() {
+            return this.urgentCardIds.length > 0;
         }
     },
     template: `
@@ -243,6 +256,8 @@ Vue.component('second-column', {
                         :key="card.id"
                         :card="card"
                         :show-move-to-test="true"
+                        :is-urgent="urgentCardIds.includes(card.id)"
+                        :blocked="hasUrgent && !urgentCardIds.includes(card.id)"
                         @move-to-test="$emit('move-to-test', $event)"
                         @remove-card="$emit('remove-card', $event)"
                         @update-card="$emit('update-card', $event)"
@@ -261,6 +276,20 @@ Vue.component('third-column', {
     computed: {
         sortedCards() {
             return this.cards.slice().sort((a, b) => (a.priority || 1) - (b.priority || 1));
+        },
+        urgentCardIds() {
+            const now = new Date();
+            return this.cards
+                .filter(card => {
+                    if (!card.deadline) return false;
+                    const deadline = new Date(card.deadline);
+                    const diff = deadline - now;
+                    return !isNaN(deadline) && diff > 0 && diff < 24 * 60 * 60 * 1000;
+                })
+                .map(c => c.id);
+        },
+        hasUrgent() {
+            return this.urgentCardIds.length > 0;
         }
     },
     template: `
@@ -273,7 +302,8 @@ Vue.component('third-column', {
                         :key="card.id"
                         :card="card"
                         :show-move-to-end="true"
-                 
+                        :is-urgent="urgentCardIds.includes(card.id)"
+                        :blocked="hasUrgent && !urgentCardIds.includes(card.id)"
                         :show-return-to-work="true" 
                         @return-to-work="$emit('return-to-work', $event)"
                         @move-to-end="$emit('move-to-end', $event)"
@@ -292,7 +322,21 @@ Vue.component('fourth-column', {
     },
     computed: {
         sortedCards() {
-            return this.cards.slice().sort((a, b) => (b.priority || 1) - (a.priority || 1));
+            return this.cards.slice().sort((a, b) => (a.priority || 1) - (b.priority || 1));
+        },
+        urgentCardIds() {
+            const now = new Date();
+            return this.cards
+                .filter(card => {
+                    if (!card.deadline) return false;
+                    const deadline = new Date(card.deadline);
+                    const diff = deadline - now;
+                    return !isNaN(deadline) && diff > 0 && diff < 24 * 60 * 60 * 1000;
+                })
+                .map(c => c.id);
+        },
+        hasUrgent() {
+            return this.urgentCardIds.length > 0;
         }
     },
     template: `
@@ -305,6 +349,8 @@ Vue.component('fourth-column', {
                         :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
+                        :is-urgent="urgentCardIds.includes(card.id)"
+                        :blocked="hasUrgent && !urgentCardIds.includes(card.id)"
                      
                     ></card-item>
                 </div>
