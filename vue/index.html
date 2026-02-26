@@ -15,19 +15,16 @@ initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
 <body>
     <div class="columns">
         <div id="app">
-            <h3>Notes</h3>
+
             <div class="columns">
                 <first-column :cards="firstColumnCards" @add-card="addCard" @remove-card="removeCard"  @update-card="updateCard"   @move-to-work="moveToWork" ></first-column>
                 <second-column :cards="secondColumnCards"  @remove-card="removeCard" @update-card="updateCard" @move-to-test="moveToTest"></second-column>
                 <third-column :cards="thirdColumnCards"   @remove-card="removeCard" @update-card="updateCard" @move-to-end="moveToEnd" @return-to-work="returnToWork"></third-column>
-                <fourth-column :cards="fourthColumnCards"   @remove-card="removeCard" ></fourth-column>
+                <fourth-column :cards="fourthColumnCards"   @remove-card="removeCard" @update-card="updateCard"></fourth-column>
             </div>
         </div>
 
     </div>
 </div>
-
-<script src="//cdn.jsdelivr.net/npm/sortablejs@1.8.4/Sortable.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.20.0/vuedraggable.umd.min.js"></script>
 </body>
 </html>

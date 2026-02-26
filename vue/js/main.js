@@ -64,48 +64,54 @@ Vue.component('card-item', {
         }
     },
     template: `
+ <div class="card_1">
         <div class="card" :class="{ urgent: isUrgent }">
-            <div v-if="!isEditing">
+                        <div v-if="!isEditing">
                 <h3>{{ card.name }}</h3>
-                <p>Приоритет: {{ card.priority || 1 }}</p>
-                <p v-if="card.description">Описание: {{ card.description }}</p>
-                <p v-if="card.deadline">Дедлайн: {{ new Date(card.deadline).toLocaleString() }}</p>
-                <p v-if="card.createdAt">Создано: {{ new Date(card.createdAt).toLocaleString() }}</p>
-                <p v-if="card.lastEdited">Отредактировано: {{ new Date(card.lastEdited).toLocaleString() }}</p>
-                <p v-if="card.returnReason" style="color: red;" :disabled="blocked">Причина возврата: {{ card.returnReason }}</p>
-                <button @click="$emit('remove-card', card.id)" :disabled="blocked">Удалить</button>
-                <button @click="isEditing = true" :disabled="blocked">Редактировать</button>
-                <button v-if="showMoveToWork" @click="$emit('move-to-work', card.id)" :disabled="blocked">В работу</button>
-                <button v-if="showMoveToTest" @click="$emit('move-to-test', card.id)"  :disabled="blocked">В тестирование</button>
-                <button v-if="showMoveToEnd" @click="$emit('move-to-end', card.id)" :disabled="blocked">Задача выполнена</button>
-                <button v-if="showReturnToWork && !showReturnInput" @click="openReturnInput" :disabled="blocked">Вернуть в работу</button>
-                <div v-if="showReturnInput">
-                    <p>
-                        <label>Причина возврата:</label>
-                        <input v-model="returnReasonInput" placeholder="Укажите причину">
-                    </p>
-                    <button @click="confirmReturn">Подтвердить</button>
-                    <button @click="cancelReturn">Отмена</button>
-                </div>
+                <div class="card_2">
+                    <p>Priority: {{ card.priority || 1 }}</p>
+                    <p v-if="card.description">Description: {{ card.description }}</p>
+                    <p v-if="card.deadline">Deadline: {{ new Date(card.deadline).toLocaleString() }}</p>
+                    <p v-if="card.createdAt">Created: {{ new Date(card.createdAt).toLocaleString() }}</p>
+                    <p v-if="card.lastEdited">Last Edited: {{ new Date(card.lastEdited).toLocaleString() }}</p>
+                    <p v-if="card.returnReason" style="color: red;" :disabled="blocked">Причина возврата: {{ card.returnReason }}</p>
+                    <button @click="$emit('remove-card', card.id)" :disabled="blocked">Delete</button>
+                    <button @click="isEditing = true" :disabled="blocked">Edited</button>
+                    <button v-if="showMoveToWork" @click="$emit('move-to-work', card.id)" :disabled="blocked">To work</button>
+                    <button v-if="showMoveToTest" @click="$emit('move-to-test', card.id)"  :disabled="blocked">Testing</button>
+                    <button v-if="showMoveToEnd" @click="$emit('move-to-end', card.id)" :disabled="blocked">Completed</button>
+                    <button v-if="showReturnToWork && !showReturnInput" @click="openReturnInput" :disabled="blocked">Back to work</button>
+                    <p v-if="card.completedStatus">Status: {{ card.completedStatus }}</p>
+                    <div v-if="showReturnInput">
+                        <p>
+                            <label>Reason for return:</label>
+                            <input v-model="returnReasonInput" placeholder="Please state the reason">
+                        </p>
+                        <button @click="confirmReturn">Confirm</button>
+                        <button @click="cancelReturn">Cancel</button>
+                    </div>
+                </div>  
             </div>
             <div v-else>
-                <h3>Редактирование</h3>
+                <h3>Editing</h3>
+                <div clas="edit" style="padding: 10px;">
                 <p>
-                    <label>Название:</label>
-                    <input v-model="editedName" placeholder="Название">
+                    <label>Name:</label>
+                    <input v-model="editedName" placeholder="Name">
                 </p>
                 <p>
-                    <label>Описание:</label>
-                    <textarea v-model="editedDescription" placeholder="Описание"></textarea>
+                    <label>Description:</label>
+                    <textarea v-model="editedDescription" placeholder="Description"></textarea>
                 </p>
                 <p>
-                    <label>Дедлайн:</label>
+                    <label>Deadline:</label>
                     <input type="datetime-local" v-model="editedDeadline">
                 </p>
-                <button @click="saveChanges">Сохранить</button>
-                <button @click="cancelEditing">Отмена</button>
+                <button @click="saveChanges">Save</button>
+                <button @click="cancelEditing">Cancel</button>
             </div>
-            <p v-if="card.completedStatus">Статус: {{ card.completedStatus }}</p>
+        </div>
+        </div>
         </div>
     `
 });
@@ -137,7 +143,7 @@ Vue.component('first-column', {
     },
     template: `
         <div>
-            <h2>Запланированные задачи</h2>
+            <h2>Scheduled tasks</h2>
             <div>
                 <form @submit.prevent="onSubmit">
                     <p v-if="errors.length">
@@ -153,24 +159,25 @@ Vue.component('first-column', {
                                 <input id="name" v-model="name" placeholder="Enter card name">
                             </p>
                             <p>
-                                <label>Описание</label>
+                                <label>Description</label>
                                 <textarea v-model="description" placeholder="Введите описание" rows="3"></textarea>
                             </p>
                             <p>
                                 <label for="deadline">Deadline:</label>
                                 <input type="datetime-local" id="deadline" v-model="deadline">
                             </p>
+                    
                             <p>
-                                <input type="submit" value="Add card">
-                            </p>
-                            <p>
-    <label>Приоритет (1-3):</label>
+    <label>priority (1-3):</label>
     <select v-model.number="priority">
-        <option value="1">1 (высокий)</option>
-        <option value="2">2 (средний)</option>
-        <option value="3">3 (низкий)</option>
+        <option value="1">1 (high)</option>
+        <option value="2">2 (middle)</option>
+        <option value="3">3 (low)</option>
     </select>
 </p>
+<p>
+                                <input type="submit" value="Add card">
+                            </p>
                         </div>
                     </div>
                 </form>
@@ -248,7 +255,7 @@ Vue.component('second-column', {
     },
     template: `
         <div>
-            <h2>Задачи в работе</h2>
+            <h2>Tasks at work</h2>
             <div>
                 <div class="column-item">
                     <card-item
@@ -294,7 +301,7 @@ Vue.component('third-column', {
     },
     template: `
         <div>
-            <h2>Тестирование</h2>
+            <h2>Testing</h2>
             <div>
                 <div class="column-item">
                     <card-item
@@ -341,7 +348,7 @@ Vue.component('fourth-column', {
     },
     template: `
         <div>
-            <h2>Выполненные задачи</h2>
+            <h2>Completed tasks</h2>
             <div>
                 <div class="column-item">
                     <card-item
@@ -349,6 +356,7 @@ Vue.component('fourth-column', {
                         :key="card.id"
                         :card="card"
                         @remove-card="$emit('remove-card', $event)"
+                         @update-card="$emit('update-card', $event)"
                         :is-urgent="urgentCardIds.includes(card.id)"
                         :blocked="hasUrgent && !urgentCardIds.includes(card.id)"
                      
@@ -386,6 +394,7 @@ new Vue({
                 this.firstColumnCards,
                 this.secondColumnCards,
                 this.thirdColumnCards,
+                this.fourthColumnCards
             ];
             for (let column of allColumns) {
                 const card = column.find(c => c.id === updatedData.id);
@@ -424,9 +433,9 @@ new Vue({
                 const now = new Date();
                 const deadline = card.deadline ? new Date(card.deadline) : null;
                 if (deadline && deadline < now) {
-                    card.completedStatus = 'Просрочено';
+                    card.completedStatus = 'Overdue';
                 } else {
-                    card.completedStatus = 'Выполнено в срок';
+                    card.completedStatus = 'Completed on time';
                 }
                 delete card.returnReason;
                 this.thirdColumnCards = this.thirdColumnCards.filter(c => c.id !== cardId);
